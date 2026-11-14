@@ -9,17 +9,69 @@ Define the mission, system boundary, stakeholders, and external result boundary.
 \index{measurement usability}\index{ADC0804}\index{FT245R}\index{Operator}\index{Integrator}\index{Maintainer}
 \section{Mission and Boundary}
 \label{Section:MeasurementMission}
-The mission is to determine whether the measurement can be used. The system of interest includes the sensor coupled with an ADC0804, the clock/counter, interface logic, the FT245R data path, and the host control app on macOS. A downstream consumer is outside the system boundary and receives the published result. The physical quantity, operating context, and measurable intended-use success remain \hyperref[Question:Q-101]{Q-101}, \hyperref[Question:Q-102]{Q-102}, \hyperref[Question:Q-113]{Q-113}.
-
-The user selected the ADC0804 8-bit conversion code and a clock/counter value as two parallel inputs to the FT245R data path. Interface logic will define how they are captured, associated, and transferred. The FT245R USB-to-parallel interface carries those data to the host. The host qualifies the measurement and publishes code, status, and timing data to the downstream consumer. These are logical responsibilities, not a selected pin-level implementation or packet format.
-
-Figure~\ref{Figure:SensorContext} records the selected components and data direction. The diagram does not claim simultaneous capture, an 8-bit counter, a timestamp unit, or two separate physical FT245R ports. The FT245R datasheet's block diagram shows the D0--D7 FIFO data bus \cite{FT245RDatasheet}; the interface logic's arbitration and record encoding remain \hyperref[Question:Q-103]{Q-103}, \hyperref[Question:Q-112]{Q-112}. The ADC0804's 8-bit conversion interface is supported by its vendor documentation \cite{ADC0804Datasheet}. These sources do not establish the project's voltage range, timing limits, or complete schematic.
-\begin{figure}[htbp]
+The mission is to determine whether a measurement can be used. In
+Figure~\ref{Figure:SensorContext}, the system of interest includes the
+acquisition hardware and the C++ control app on macOS. The sensor, ADC0804,
+clock/counter, interface logic, and FT245R are external to the control app.
+The physical quantity enters the system at the sensor. The downstream
+consumer is external to the system and receives the published result.
+The arrows show the direction and content of the measurement flow. See
+\ArchitectureRef{ARC-103} and \ArchitectureRef{ARC-104} for the allocation
+and its requirement links.
+\begin{figure}[!htbp]
 \centering
-\resizebox{\linewidth}{!}{\input{TikZ/s8sSystemContext/s8sSensorContext.tex}}
-\caption{Measurement path with logical conversion/counter inputs and a downstream result boundary.}
+\input{TikZ/s8sSystemContext/s8sSensorContext.tex}
+\caption{Measurement flow across the acquisition hardware, control app, and downstream consumer boundaries.}
 \label{Figure:SensorContext}
 \end{figure}
+
+\section{Boundary Information and Open Questions}
+\label{Section:ContextBoundaryInformation}
+\begin{description}[leftmargin=0pt,labelindent=0pt,labelsep=0pt,style=nextline]
+\item[Physical quantity to sensor to ADC0804.]
+The sensor responds to the physical quantity and supplies an analog signal
+to the ADC0804. Identify the sensor and quantity, then establish the
+operating conditions, signal units and range, conversion reference, and
+calibration needed to interpret the conversion code
+(\hyperref[Question:Q-101]{Q-101}, \hyperref[Question:Q-102]{Q-102}).
+
+\item[ADC0804 and clock/counter to interface logic.]
+The ADC0804 supplies an 8-bit conversion code \cite{ADC0804Datasheet}.
+The clock/counter supplies a counter value through a separate logical input.
+Define the counter width, clock, capture event, reset, rollover, and
+relationship to measurement time. Establish how the interface logic associates
+the code with the correct counter value and how much capture skew is allowed
+(\hyperref[Question:Q-111]{Q-111}, \hyperref[Question:Q-112]{Q-112},
+\hyperref[Question:Q-104]{Q-104}).
+
+\item[Interface logic to FT245R.]
+The interface logic sends the associated conversion code and counter value
+through the FT245R parallel FIFO data path. The FT245R datasheet identifies
+the D0--D7 data bus \cite{FT245RDatasheet}. Engineering must establish
+electrical compatibility, bus ownership, handshake, transfer order,
+record framing, and handling of incomplete transfers and backpressure
+(\hyperref[Question:Q-102]{Q-102}, \hyperref[Question:Q-103]{Q-103},
+\hyperref[Question:Q-112]{Q-112}).
+
+\item[FT245R to control app.]
+USB carries the associated conversion code and counter value to the control
+app. Define the macOS driver and API, reception and recovery behavior, and
+the evidence and decision rules the control app uses to assess measurement
+usability. Establish what observations support connection and operating-health
+reporting and how the Maintainer receives that information
+(\hyperref[Question:Q-106]{Q-106}, \hyperref[Question:Q-107]{Q-107},
+\hyperref[Question:Q-113]{Q-113}, \hyperref[Question:Q-115]{Q-115}).
+
+\item[Control app to downstream consumer.]
+The control app qualifies measurement usability and publishes code, status,
+and timing. Identify the receiving application or system and define the code
+meaning, status semantics, timing origin and units, schema and version,
+delivery transport, and incomplete or error result policy with the consumer
+(\hyperref[Question:Q-114]{Q-114}).
+\end{description}
+
+The Operator's decision presentation and any configuration or reverse command
+flow remain open in \hyperref[Question:Q-105]{Q-105}.
 
 \section{Stakeholders}
 \label{Section:MeasurementStakeholders}

@@ -1,16 +1,31 @@
-\begin{tikzpicture}[box/.style={draw=s8sBlue,fill=s8sLightBlue,align=center,text width=2.6cm,minimum height=1.35cm,font=\small},>=Latex]
-\node[box] (sensor) at (0,2.1) {Sensor};
-\node[box] (adc) at (3.6,2.1) {ADC0804\\8-bit conversion code};
-\node[box] (counter) at (3.6,-0.4) {Clock/counter\\counter value};
-\node[box] (logic) at (7.4,0.9) {Interface logic\\capture / associate / transfer};
-\node[box] (ftdi) at (11,0.9) {FT245R\\USB-to-parallel interface};
-\node[box] (host) at (14.6,0.9) {Control app\\C++ / macOS\\qualify measurement};
-\node[box] (consumer) at (14.6,-2.8) {Downstream consumer};
-\node[draw=s8sGray,dashed,fit=(sensor)(adc)(counter)(logic)(ftdi)(host),inner sep=0.45cm,label={[font=\small]above:System of interest: conceptual allocation}] {};
-\draw[->] (sensor.east) -- (adc.west);
-\draw[->] (adc.east) -- ++(0.6,0) |- ([yshift=4mm]logic.west);
-\draw[->] (counter.east) -- ++(0.6,0) |- ([yshift=-4mm]logic.west);
-\draw[->] (logic.east) -- (ftdi.west);
-\draw[->] (ftdi.east) -- node[above,font=\scriptsize]{USB} (host.west);
-\draw[->] (host.south) -- node[left,fill=white,inner sep=2pt,font=\small,align=right]{Published result:\\code, status, timing} (consumer.north);
+\begin{tikzpicture}[
+  box/.style={draw=s8sBlue,fill=s8sLightBlue,align=center,
+    minimum width=2.9cm,minimum height=0.6cm,font=\small},
+  boundary/.style={draw=s8sGray,dashed,inner sep=0.25cm},
+  flow/.style={->,>=Latex},
+  data/.style={font=\footnotesize,align=left,inner sep=3pt}
+]
+\node[box,draw=s8sGray,fill=white] (environment) at (-2.6,0) {Measured environment};
+\node[box] (sensor) at (-2.6,-1.6) {Sensor};
+\node[box] (adc) at (-2.6,-2.8) {ADC0804};
+\node[box] (counter) at (2.6,-2.8) {Clock/counter};
+\node[box,minimum width=8.1cm] (logic) at (0,-4.0) {Interface logic};
+\node[box] (ftdi) at (0,-5.4) {FT245R};
+\node[box] (host) at (0,-7.0) {Control app\\C++ on macOS};
+\node[box,draw=s8sGray,fill=white] (consumer) at (0,-9.0) {Downstream consumer};
+
+\coordinate (right edge) at (5.2,-4);
+\node[boundary,fit=(sensor)(adc)(counter)(logic)(ftdi)(host)(right edge)] (system) {};
+\node[anchor=north east,font=\footnotesize,align=right] at (system.north east)
+  {System of interest};
+
+\draw[flow] (environment.south) -- node[data,right]{Physical quantity} (sensor.north);
+\draw[flow] (sensor.south) -- node[data,right]{Analog signal} (adc.north);
+\draw[flow] (adc.south) -- node[data,right]{8-bit conversion code}
+  (adc.south |- logic.north);
+\draw[flow] (counter.south) -- node[data,right]{Counter value}
+  (counter.south |- logic.north);
+\draw[flow] (logic.south) -- node[data,right]{Associated conversion code and\\counter value via parallel FIFO} (ftdi.north);
+\draw[flow] (ftdi.south) -- node[data,right]{Associated conversion code and\\counter value via USB} (host.north);
+\draw[flow] (host.south) -- node[data,right,pos=0.66]{Published result\\Code, status, timing} (consumer.north);
 \end{tikzpicture}
